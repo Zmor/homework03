@@ -1,0 +1,58 @@
+server:
+  port: 8000
+  # 设置webflux netty的请求头大小为100kb
+  max-http-header-size: 102400
+
+spring:
+  application:
+    name: spring-cloud-gateway
+  profiles:
+    # 配置文件环境
+    active: dev
+  main:
+    #允许重名的bean可以被覆盖，spring默认是没有默认值的
+    allow-bean-definition-overriding: true
+
+  cloud:
+    nacos:
+      server-addr: localhost:8848
+      discovery:
+        server-addr: ${spring.cloud.nacos.server-addr}
+        group: SPRING_CLOUD_GROUP
+        #namespace: 2ce4c54a-b5a3-4ef7-ac82-be9046207794
+      config:
+        file-extension: yml
+        server-addr: ${spring.cloud.nacos.server-addr}
+        group: SPRING_CLOUD_GROUP
+        #namespace: 2ce4c54a-b5a3-4ef7-ac82-be9046207794
+
+    #################################
+    #   gateway相关配置
+    #################################
+    gateway:
+      # 开启 Gateway 服务注册中心服务发现
+      discovery:
+        locator:
+          lowerCaseServiceId: true
+          enabled: true
+      # 路由定义
+      routes:
+        - id: user-route-gray
+          uri: grayLb://account-service
+          predicates:
+            - Path=/user/**
+            - HeaderUsername=Jack
+          filters:
+            - AddRequestHeader=Version,v2
+        - id: user-route
+          uri: grayLb://account-service
+          predicates:
+            - Path=/user/**
+          filters:
+            - AddRequestHeader=Version,v1
+        - id: order-route
+          uri: grayLb://order-service
+          predicates:
+            - Path=/order/**
+          filters:
+            - AddRequestHeader=Version,v1
